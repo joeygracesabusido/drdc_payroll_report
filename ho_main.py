@@ -2,7 +2,7 @@ import pandas as pd
 from fuzzywuzzy import fuzz
 from prettytable import PrettyTable
 import subprocess
-from os import startfile
+# from os import startfile
 
 
 @staticmethod
@@ -114,9 +114,9 @@ class ExcellConnection():
         open_excel_file = input('Do you want to open the Excel File: ').lower()
 
         if open_excel_file == 'yes':
-
+            subprocess.run(['xdg-open', 'payroll_gross_all.xlsx'])
             # Open the generated Excel file
-            startfile("payroll_gross_all.xlsx")
+            # startfile("payroll_gross_all.xlsx")
         
         transaction()
 
@@ -152,10 +152,20 @@ class ExcellConnection():
         # grouped_df = merged_df.groupby(['DEPARTMENT'])[['Total_Gross','SSS_Employee_Remt']].sum().reset_index()
         merged_df['TOTAL SSS'] = merged_df['SSS_Employee_Remt'] + merged_df['SSS_Employer_share'] + merged_df['EC']
         merged_df['TOTAL PHIC'] = merged_df['PHIC_Employee'] + merged_df['PHIC_Rmployer_Share']
+        merged_df['TOTAL PHIC'] = merged_df['PHIC_Employee'] + merged_df['PHIC_Rmployer_Share']
+        merged_df['TOTAL HDMF'] = merged_df['HDMF_CONTRIBUTION_employee'] + merged_df['HDMF_CONTRIBUTION_employer']
+
+
         grouped_df = merged_df.groupby(['DEPARTMENT','BOOKS'])[['Total_Gross', 'SSS_Employee_Remt',
                                             'SSS_Employer_share','EC','TOTAL SSS',
                                             'SSS_Loan','SSS_Calamity Loan','PHIC_Employee',
-                                            'PHIC_Rmployer_Share']].sum().reset_index()
+                                            'PHIC_Rmployer_Share','TOTAL PHIC',
+                                            'HDMF_CONTRIBUTION_employee','HDMF_CONTRIBUTION_employer',
+                                            'TOTAL HDMF','HDMF_LOAN','HDMF_CALAMITY',
+                                            'W_TAX_2024','CASH_ADVANCE','Personal_Loan_(MA)',
+                                            '13th_Month_Pay_over_Payment','Ad 13 Month Pay',
+                                            'Return_loan_sss_loan','Regular_Allowance',
+                                            'Holiday_RDOT_Pay','meal','Developmental','Add_Others Adjustment','Net_Pay']].sum().reset_index()
         
         # Assuming 'BOOKS' is a column in the grouped DataFrame
         # filtered_df = grouped_df[grouped_df['BOOKS'] == 'GENERAL COMMON EXPENSE']
@@ -171,9 +181,10 @@ class ExcellConnection():
         open_excel_file = input('Do you want to open the Excel File: ').lower()
 
         if open_excel_file == 'yes':
+            subprocess.run(['xdg-open', 'payroll_gross.xlsx'])
 
             # Open the generated Excel file
-            startfile("payroll_gross.xlsx")
+            # startfile("payroll_gross.xlsx")
         
         transaction()
 
@@ -205,21 +216,66 @@ class ExcellConnection():
 
        
         # grouped_df = merged_df.groupby(['DEPARTMENT'])[['Total_Gross','SSS_Employee_Remt']].sum().reset_index()
+        merged_df['TOTAL SSS'] = merged_df['SSS_Employee_Remt'] + merged_df['SSS_Employer_share'] + merged_df['EC']
+        merged_df['TOTAL PHIC'] = merged_df['PHIC_Employee'] + merged_df['PHIC_Rmployer_Share']
+        merged_df['TOTAL PHIC'] = merged_df['PHIC_Employee'] + merged_df['PHIC_Rmployer_Share']
+        merged_df['TOTAL HDMF'] = merged_df['HDMF_CONTRIBUTION_employee'] + merged_df['HDMF_CONTRIBUTION_employer']
         grouped_df = merged_df.groupby(['DEPARTMENT','BOOKS'])[['Total_Gross', 'SSS_Employee_Remt',
-                                                    'SSS_Employer_share']].sum().reset_index()
+                                            'SSS_Employer_share','EC','TOTAL SSS',
+                                            'SSS_Loan','SSS_Calamity Loan','PHIC_Employee',
+                                            'PHIC_Rmployer_Share','TOTAL PHIC',
+                                            'HDMF_CONTRIBUTION_employee','HDMF_CONTRIBUTION_employer',
+                                            'TOTAL HDMF','HDMF_LOAN','HDMF_CALAMITY',
+                                            'W_TAX_2024','CASH_ADVANCE','Personal_Loan_(MA)',
+                                            '13th_Month_Pay_over_Payment','Ad 13 Month Pay',
+                                            'Return_loan_sss_loan','Regular_Allowance',
+                                            'Holiday_RDOT_Pay','meal','Developmental','Add_Others Adjustment','Net_Pay']].sum().reset_index()
         
         # Assuming 'BOOKS' is a column in the grouped DataFrame
         filtered_df = grouped_df[grouped_df['BOOKS'] == 'GENERAL COMMON EXPENSE']
 
         pd.set_option('display.max_rows', None)
 
-        filtered_df.to_excel('payroll_gross.xlsx', index=False)
+
+        # Add a new row for "SALARIES & WAGES - ACCOUNTING"
+         # Calculate total gross for the "ACCOUNTING" department
+        accounting_total_gross = grouped_df.loc[grouped_df['DEPARTMENT'] == 'ACCOUNTING DEPARTMENT', 'Total_Gross'].sum()
+        admin_total_gross = grouped_df.loc[grouped_df['DEPARTMENT'] == 'ADMIN DEPARTMENT', 'Total_Gross'].sum()
+
+       
+
+        # Create separate DataFrames for accounting and admin
+        accounting_row = pd.DataFrame({
+            'DEPARTMENT': ['SALARIES & WAGES - ACCOUNTING'],
+            'BOOKS': [accounting_total_gross],
+            # Add other columns with appropriate default values
+        })
+
+        admin_row = pd.DataFrame({
+            'DEPARTMENT': ['SALARIES & WAGES - ADMIN'],
+            'BOOKS': [admin_total_gross],
+            # Add other columns with appropriate default values
+        })
+
+
+       
+        # Concatenate the new rows to the existing DataFrame
+        grouped_df = pd.concat([grouped_df, accounting_row, admin_row], ignore_index=True)
+
+        # # Save to Excel file with two sheets
+        # with pd.ExcelWriter('payroll_gross.xlsx', engine='xlsxwriter') as writer:
+        #     grouped_df.to_excel(writer, sheet_name='Sheet1', index=False)
+        #     accounting_row.to_excel(writer, sheet_name='Sheet2', index=False, header=True)
+        #     admin_row.to_excel(writer, sheet_name='Sheet2', index=False, header=False, startcol=2)  # Start from column C
+
+
+        grouped_df.to_excel('payroll_gross.xlsx', index=False)
 
         # Open the generated Excel file using subprocess
-        # subprocess.run(['xdg-open', 'payroll_gross.xlsx'])
+        subprocess.run(['xdg-open', 'payroll_gross.xlsx'])
 
         # Open the generated Excel file
-        startfile("payroll_gross.xlsx")
+        # startfile("payroll_gross.xlsx")
         
         transaction()
 
@@ -251,8 +307,20 @@ class ExcellConnection():
 
        
         # grouped_df = merged_df.groupby(['DEPARTMENT'])[['Total_Gross','SSS_Employee_Remt']].sum().reset_index()
+        merged_df['TOTAL SSS'] = merged_df['SSS_Employee_Remt'] + merged_df['SSS_Employer_share'] + merged_df['EC']
+        merged_df['TOTAL PHIC'] = merged_df['PHIC_Employee'] + merged_df['PHIC_Rmployer_Share']
+        merged_df['TOTAL PHIC'] = merged_df['PHIC_Employee'] + merged_df['PHIC_Rmployer_Share']
+        merged_df['TOTAL HDMF'] = merged_df['HDMF_CONTRIBUTION_employee'] + merged_df['HDMF_CONTRIBUTION_employer']
         grouped_df = merged_df.groupby(['DEPARTMENT','BOOKS'])[['Total_Gross', 'SSS_Employee_Remt',
-                                                    'SSS_Employer_share']].sum().reset_index()
+                                            'SSS_Employer_share','EC','TOTAL SSS',
+                                            'SSS_Loan','SSS_Calamity Loan','PHIC_Employee',
+                                            'PHIC_Rmployer_Share','TOTAL PHIC',
+                                            'HDMF_CONTRIBUTION_employee','HDMF_CONTRIBUTION_employer',
+                                            'TOTAL HDMF','HDMF_LOAN','HDMF_CALAMITY',
+                                            'W_TAX_2024','CASH_ADVANCE','Personal_Loan_(MA)',
+                                            '13th_Month_Pay_over_Payment','Ad 13 Month Pay',
+                                            'Return_loan_sss_loan','Regular_Allowance',
+                                            'Holiday_RDOT_Pay','meal','Developmental','Add_Others Adjustment','Net_Pay']].sum().reset_index()
         
         # Assuming 'BOOKS' is a column in the grouped DataFrame
         filtered_df = grouped_df[grouped_df['BOOKS'] == 'ELISTON PLACE']
@@ -262,10 +330,10 @@ class ExcellConnection():
         filtered_df.to_excel('payroll_gross.xlsx', index=False)
 
         # Open the generated Excel file using subprocess
-        # subprocess.run(['xdg-open', 'payroll_gross.xlsx'])
+        subprocess.run(['xdg-open', 'payroll_gross.xlsx'])
 
         # Open the generated Excel file
-        startfile("payroll_gross.xlsx")
+        # startfile("payroll_gross.xlsx")
         
         transaction()
 
@@ -298,8 +366,20 @@ class ExcellConnection():
 
        
         # grouped_df = merged_df.groupby(['DEPARTMENT'])[['Total_Gross','SSS_Employee_Remt']].sum().reset_index()
+        merged_df['TOTAL SSS'] = merged_df['SSS_Employee_Remt'] + merged_df['SSS_Employer_share'] + merged_df['EC']
+        merged_df['TOTAL PHIC'] = merged_df['PHIC_Employee'] + merged_df['PHIC_Rmployer_Share']
+        merged_df['TOTAL PHIC'] = merged_df['PHIC_Employee'] + merged_df['PHIC_Rmployer_Share']
+        merged_df['TOTAL HDMF'] = merged_df['HDMF_CONTRIBUTION_employee'] + merged_df['HDMF_CONTRIBUTION_employer']
         grouped_df = merged_df.groupby(['DEPARTMENT','BOOKS'])[['Total_Gross', 'SSS_Employee_Remt',
-                                                    'SSS_Employer_share']].sum().reset_index()
+                                            'SSS_Employer_share','EC','TOTAL SSS',
+                                            'SSS_Loan','SSS_Calamity Loan','PHIC_Employee',
+                                            'PHIC_Rmployer_Share','TOTAL PHIC',
+                                            'HDMF_CONTRIBUTION_employee','HDMF_CONTRIBUTION_employer',
+                                            'TOTAL HDMF','HDMF_LOAN','HDMF_CALAMITY',
+                                            'W_TAX_2024','CASH_ADVANCE','Personal_Loan_(MA)',
+                                            '13th_Month_Pay_over_Payment','Ad 13 Month Pay',
+                                            'Return_loan_sss_loan','Regular_Allowance',
+                                            'Holiday_RDOT_Pay','meal','Developmental','Add_Others Adjustment','Net_Pay']].sum().reset_index()
         
         # Assuming 'BOOKS' is a column in the grouped DataFrame
         filtered_df = grouped_df[grouped_df['BOOKS'] == 'WELLINGTON PLACE 6-12']
@@ -309,10 +389,10 @@ class ExcellConnection():
         filtered_df.to_excel('payroll_gross.xlsx', index=False)
 
         # Open the generated Excel file using subprocess
-        # subprocess.run(['xdg-open', 'payroll_gross.xlsx']) 
+        subprocess.run(['xdg-open', 'payroll_gross.xlsx']) 
 
         # Open the generated Excel file
-        startfile("payroll_gross.xlsx")
+        # startfile("payroll_gross.xlsx")
         
         transaction()
 
@@ -345,8 +425,20 @@ class ExcellConnection():
 
        
         # grouped_df = merged_df.groupby(['DEPARTMENT'])[['Total_Gross','SSS_Employee_Remt']].sum().reset_index()
+        merged_df['TOTAL SSS'] = merged_df['SSS_Employee_Remt'] + merged_df['SSS_Employer_share'] + merged_df['EC']
+        merged_df['TOTAL PHIC'] = merged_df['PHIC_Employee'] + merged_df['PHIC_Rmployer_Share']
+        merged_df['TOTAL PHIC'] = merged_df['PHIC_Employee'] + merged_df['PHIC_Rmployer_Share']
+        merged_df['TOTAL HDMF'] = merged_df['HDMF_CONTRIBUTION_employee'] + merged_df['HDMF_CONTRIBUTION_employer']
         grouped_df = merged_df.groupby(['DEPARTMENT','BOOKS'])[['Total_Gross', 'SSS_Employee_Remt',
-                                                    'SSS_Employer_share']].sum().reset_index()
+                                            'SSS_Employer_share','EC','TOTAL SSS',
+                                            'SSS_Loan','SSS_Calamity Loan','PHIC_Employee',
+                                            'PHIC_Rmployer_Share','TOTAL PHIC',
+                                            'HDMF_CONTRIBUTION_employee','HDMF_CONTRIBUTION_employer',
+                                            'TOTAL HDMF','HDMF_LOAN','HDMF_CALAMITY',
+                                            'W_TAX_2024','CASH_ADVANCE','Personal_Loan_(MA)',
+                                            '13th_Month_Pay_over_Payment','Ad 13 Month Pay',
+                                            'Return_loan_sss_loan','Regular_Allowance',
+                                            'Holiday_RDOT_Pay','meal','Developmental','Add_Others Adjustment','Net_Pay']].sum().reset_index()
         
         # Assuming 'BOOKS' is a column in the grouped DataFrame
         filtered_df = grouped_df[grouped_df['BOOKS'] == 'QH2']
@@ -356,10 +448,10 @@ class ExcellConnection():
         filtered_df.to_excel('payroll_gross.xlsx', index=False)
 
         # Open the generated Excel file using subprocess
-        # subprocess.run(['xdg-open', 'payroll_gross.xlsx']) 
+        subprocess.run(['xdg-open', 'payroll_gross.xlsx']) 
 
         # Open the generated Excel file for windows
-        startfile("payroll_gross.xlsx")
+        # startfile("payroll_gross.xlsx")
         
         transaction()
 
