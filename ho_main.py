@@ -2,7 +2,7 @@ import pandas as pd
 from fuzzywuzzy import fuzz
 from prettytable import PrettyTable
 import subprocess
-# from os import startfile
+from os import startfile
 
 
 @staticmethod
@@ -114,9 +114,9 @@ class ExcellConnection():
         open_excel_file = input('Do you want to open the Excel File: ').lower()
 
         if open_excel_file == 'yes':
-            subprocess.run(['xdg-open', 'payroll_gross_all.xlsx'])
+            # subprocess.run(['xdg-open', 'payroll_gross_all.xlsx'])
             # Open the generated Excel file
-            # startfile("payroll_gross_all.xlsx")
+            startfile("payroll_gross_all.xlsx")
         
         transaction()
 
@@ -181,10 +181,10 @@ class ExcellConnection():
         open_excel_file = input('Do you want to open the Excel File: ').lower()
 
         if open_excel_file == 'yes':
-            subprocess.run(['xdg-open', 'payroll_gross.xlsx'])
+            # subprocess.run(['xdg-open', 'payroll_gross.xlsx'])
 
             # Open the generated Excel file
-            # startfile("payroll_gross.xlsx")
+            startfile("payroll_gross.xlsx")
         
         transaction()
 
@@ -231,53 +231,127 @@ class ExcellConnection():
                                             'Return_loan_sss_loan','Regular_Allowance',
                                             'Holiday_RDOT_Pay','meal','Developmental','Add_Others Adjustment','Net_Pay']].sum().reset_index()
         
+        # Create a new column 'TOTAL SHARES' by summing 'SSS_Employer_share' and 'EC'
+        grouped_df['TOTAL SHARES'] = grouped_df['SSS_Employer_share'] + grouped_df['EC']
+        
+      
+        
         # Assuming 'BOOKS' is a column in the grouped DataFrame
         filtered_df = grouped_df[grouped_df['BOOKS'] == 'GENERAL COMMON EXPENSE']
+
+        
 
         pd.set_option('display.max_rows', None)
 
 
-        # Add a new row for "SALARIES & WAGES - ACCOUNTING"
-         # Calculate total gross for the "ACCOUNTING" department
-        accounting_total_gross = grouped_df.loc[grouped_df['DEPARTMENT'] == 'ACCOUNTING DEPARTMENT', 'Total_Gross'].sum()
-        admin_total_gross = grouped_df.loc[grouped_df['DEPARTMENT'] == 'ADMIN DEPARTMENT', 'Total_Gross'].sum()
+        departments = ['ACCOUNTING DEPARTMENT', 'ADMIN DEPARTMENT', 'EMD DEPARTMENT', 'ENGINEERING DEPARTMENT - ANTIPOLO',
+                    'ENGINEERING DEPARTMENT - CAVITE', 'FINANCE DEPARTMENT', 'HR DEPARTMENT', 'LEGAL DEPARTMENT',
+                    'OFFICE OF THE PRESIDENT', 'PERMITS & LICENSES DEPARTMENT', 'PLANNING & DESIGN DEPARTMENT',
+                    'SALES & LOAN DOCUMENTATION', 'TREASURY DEPARTMENT']
 
-       
-
-        # Create separate DataFrames for accounting and admin
-        accounting_row = pd.DataFrame({
-            'DEPARTMENT': ['SALARIES & WAGES - ACCOUNTING'],
-            'BOOKS': [accounting_total_gross],
-            # Add other columns with appropriate default values
-        })
-
-        admin_row = pd.DataFrame({
-            'DEPARTMENT': ['SALARIES & WAGES - ADMIN'],
-            'BOOKS': [admin_total_gross],
-            # Add other columns with appropriate default values
-        })
-
-
-       
-        # Concatenate the new rows to the existing DataFrame
-        grouped_df = pd.concat([grouped_df, accounting_row, admin_row], ignore_index=True)
-
-        # # Save to Excel file with two sheets
-        # with pd.ExcelWriter('payroll_gross.xlsx', engine='xlsxwriter') as writer:
-        #     grouped_df.to_excel(writer, sheet_name='Sheet1', index=False)
-        #     accounting_row.to_excel(writer, sheet_name='Sheet2', index=False, header=True)
-        #     admin_row.to_excel(writer, sheet_name='Sheet2', index=False, header=False, startcol=2)  # Start from column C
-
-
-        grouped_df.to_excel('payroll_gross.xlsx', index=False)
-
-        # Open the generated Excel file using subprocess
-        subprocess.run(['xdg-open', 'payroll_gross.xlsx'])
-
-        # Open the generated Excel file
-        # startfile("payroll_gross.xlsx")
+        salary_dfs = []
+        sss_dfs = []
+        phic_dfs = []
+        hdmf_dfs = []
         
+
+        for department in departments:
+            # Calculate total gross
+            total_gross = filtered_df.loc[grouped_df['DEPARTMENT'] == department, 'Total_Gross'].sum()
+            
+            # Calculate total shares (assuming 'TOTAL SHARES' is the sum of 'SSS_Employer_share' and 'EC')
+            total_gross_ss = filtered_df.loc[grouped_df['DEPARTMENT'] == department, 'TOTAL SHARES'].sum()
+            
+            # Calculate total PHIC (assuming 'PHIC_Rmployer_Share' is the column for PHIC)
+            total_gross_phic = filtered_df.loc[grouped_df['DEPARTMENT'] == department, 'PHIC_Rmployer_Share'].sum()
+            
+            # Calculate total PHIC (assuming 'PHIC_Rmployer_Share' is the column for PHIC)
+            total_gross_hdmf = filtered_df.loc[grouped_df['DEPARTMENT'] == department, 'HDMF_CONTRIBUTION_employee'].sum()
+
+            
+
+            # Create DataFrames for SALARIES & WAGES
+            salary_df = pd.DataFrame({'DEPARTMENT': [f'SALARIES & WAGES - {department}'], 'BOOKS': [total_gross]})
+            salary_dfs.append(salary_df)
+
+            # Create DataFrames for SSS, MEDICARE & ECC CONTRIBUTIONS
+            ss_df = pd.DataFrame({'DEPARTMENT': [f'SSS, MEDICARE & ECC CONTRIBUTIONS - {department}'], 'BOOKS': [total_gross_ss]})
+            sss_dfs.append(ss_df)
+
+            # Create DataFrames for PHILHEALTH CONTRIBUTIONS
+            phic_df = pd.DataFrame({'DEPARTMENT': [f'PHILHEALTH CONTRIBUTIONS - {department}'], 'BOOKS': [total_gross_phic]})
+            phic_dfs.append(phic_df)
+
+            # Create DataFrames for HDMF CONTRIBUTIONS
+            hdmf_df = pd.DataFrame({'DEPARTMENT': [f'PAG-IBIG CONTRIBUTIONS - {department}'], 'BOOKS': [total_gross_hdmf]})
+            hdmf_dfs.append(hdmf_df)
+
+           
+        # Concatenate all SALARIES & WAGES DataFrames into a single DataFrame
+        salary_df = pd.concat(salary_dfs, ignore_index=True)
+
+        # Concatenate all SSS, MEDICARE & ECC CONTRIBUTIONS DataFrames into a single DataFrame
+        sss_df = pd.concat(sss_dfs, ignore_index=True)
+
+        # Concatenate all PHILHEALTH CONTRIBUTIONS DataFrames into a single DataFrame
+        phic_df = pd.concat(phic_dfs, ignore_index=True)
+
+        hdmf_df = pd.concat(hdmf_dfs, ignore_index=True)
+
+        
+
+        
+        
+
+        # Concatenate the new rows to the existing DataFrame
+        filtered_df = pd.concat([filtered_df,salary_df, sss_df, phic_df,
+                                 hdmf_df,], ignore_index=True)
+        
+        # Calculate the total sum of Credit
+        total_13th_month_add = filtered_df['Ad 13 Month Pay'].sum()
+        total_13th_month_less = filtered_df['13th_Month_Pay_over_Payment'].sum()
+        total_withholding_taxes_payable = filtered_df['W_TAX_2024'].sum()
+        sss_total_payable = filtered_df['TOTAL SSS'].sum()
+        sss_total_calamity = filtered_df['SSS_Calamity Loan'].sum()
+        phic_contri_payable = filtered_df['TOTAL PHIC'].sum()
+        hdmf_contri_payable =  filtered_df['TOTAL HDMF'].sum()   
+        hdmf_loan_payable =  filtered_df['HDMF_LOAN'].sum()     
+        advances_to_personel =  filtered_df['CASH_ADVANCE']
+        
+        print(advances_to_personel)
+
+        # Create a new DataFrame Credit
+        total_13th_month_add_df = pd.DataFrame({'DEPARTMENT': ['13th MONTH - ADD'], 'BOOKS': [total_13th_month_add]})
+        withholding_tax_df = pd.DataFrame({'DEPARTMENT': ['WITHOLDING TAXES PAYABLE- COMPENSATION'], 'Total_Gross': [total_withholding_taxes_payable]})
+        total_13th_month_less_df = pd.DataFrame({'DEPARTMENT': ['13th MONTH - LESS'], 'Total_Gross': [total_13th_month_less]})
+        total_sss_remittance_df = pd.DataFrame({'DEPARTMENT': ['SSS/MEDICARE/ECC PAYABLE'], 'Total_Gross': [sss_total_payable]})
+        total_sss_total_calamitiy_df = pd.DataFrame({'DEPARTMENT': ['SSS CALAMITY LOAN PAYABLE'], 'Total_Gross': [sss_total_calamity]})
+        total_phic_contri_payable_df = pd.DataFrame({'DEPARTMENT': ['PHILHEALTH CONTRIBUTIONS PAYABLE'], 'Total_Gross': [phic_contri_payable]})
+        total_hdmf_contri_payable_df = pd.DataFrame({'DEPARTMENT': ['PAG-IBIG CONTRIBUTIONS PAYABLE'], 'Total_Gross': [hdmf_contri_payable]})
+        total_hdmf_loan_df = pd.DataFrame({'DEPARTMENT': ['PAG-IBIG SALARY LOAN PAYABLE'], 'Total_Gross': [hdmf_loan_payable]})
+
+        total_hdmf_loan_df = pd.DataFrame({'DEPARTMENT': ['ADVANCES'], 'Total_Gross': [advances_to_personel]})
+        
+        
+        # Concatenate the new row to the existing DataFrame
+        filtered_df = pd.concat([filtered_df, total_13th_month_add_df,
+                                 total_13th_month_less_df, withholding_tax_df,
+                                 total_sss_remittance_df,total_sss_total_calamitiy_df,
+                                 total_phic_contri_payable_df,total_hdmf_contri_payable_df,
+                                 total_hdmf_loan_df,total_hdmf_loan_df], ignore_index=True)
+
+        # Save to Excel file
+        filtered_df.to_excel('payroll_gross.xlsx', index=False)
+
+        ans2 = input('Do you want to Open Excel file?: ').lower()
+
+        if ans2 == 'yes':
+            # Open the generated Excel file
+            startfile("payroll_gross.xlsx")
+            
         transaction()
+
+        
 
     @staticmethod
     def EP_computation():
@@ -330,10 +404,10 @@ class ExcellConnection():
         filtered_df.to_excel('payroll_gross.xlsx', index=False)
 
         # Open the generated Excel file using subprocess
-        subprocess.run(['xdg-open', 'payroll_gross.xlsx'])
+        # subprocess.run(['xdg-open', 'payroll_gross.xlsx'])
 
         # Open the generated Excel file
-        # startfile("payroll_gross.xlsx")
+        startfile("payroll_gross.xlsx")
         
         transaction()
 
@@ -389,10 +463,10 @@ class ExcellConnection():
         filtered_df.to_excel('payroll_gross.xlsx', index=False)
 
         # Open the generated Excel file using subprocess
-        subprocess.run(['xdg-open', 'payroll_gross.xlsx']) 
+        # subprocess.run(['xdg-open', 'payroll_gross.xlsx']) 
 
         # Open the generated Excel file
-        # startfile("payroll_gross.xlsx")
+        startfile("payroll_gross.xlsx")
         
         transaction()
 
@@ -448,10 +522,10 @@ class ExcellConnection():
         filtered_df.to_excel('payroll_gross.xlsx', index=False)
 
         # Open the generated Excel file using subprocess
-        subprocess.run(['xdg-open', 'payroll_gross.xlsx']) 
+        # subprocess.run(['xdg-open', 'payroll_gross.xlsx']) 
 
         # Open the generated Excel file for windows
-        # startfile("payroll_gross.xlsx")
+        startfile("payroll_gross.xlsx")
         
         transaction()
 
