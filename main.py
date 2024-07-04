@@ -130,7 +130,7 @@ def  create_per_department2():
 def get_total_per_department():
     # Load data from Excel sheets
     file_path = 'LIST-AVEGA-CLAIMS1.xlsx'
-    df_sheet1 = pd.read_excel(file_path, sheet_name='April')
+    df_sheet1 = pd.read_excel(file_path, sheet_name='claims')
     df_sheet3 = pd.read_excel(file_path, sheet_name='EMPLOYEE-LIST')
 
     # Function to find similarity using fuzzywuzzy
@@ -231,7 +231,7 @@ def get_total_per_department2():
 def get_total_per_book_per_department():
     # Load data from Excel sheets
     file_path = 'LIST-AVEGA-CLAIMS1.xlsx'
-    df_sheet1 = pd.read_excel(file_path, sheet_name='April')
+    df_sheet1 = pd.read_excel(file_path, sheet_name='claims')
     df_sheet3 = pd.read_excel(file_path, sheet_name='EMPLOYEE-LIST')
 
     # Function to find similarity using fuzzywuzzy
@@ -272,7 +272,7 @@ def get_total_per_book_per_department_per_name():
     
     # Load data from Excel sheets
     file_path = 'LIST-AVEGA-CLAIMS1.xlsx'
-    df_sheet1 = pd.read_excel(file_path, sheet_name='April')
+    df_sheet1 = pd.read_excel(file_path, sheet_name='claims')
     df_sheet3 = pd.read_excel(file_path, sheet_name='EMPLOYEE-LIST')
 
     # Function to find similarity using fuzzywuzzy
